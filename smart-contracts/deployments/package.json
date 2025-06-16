@@ -1,0 +1,35 @@
+{
+  "name": "dirs-deployment-scripts",
+  "version": "1.0.0",
+  "description": "Deployment scripts for DIRS smart contracts",
+  "main": "deploy-all.js",
+  "scripts": {
+    "deploy:testnet": "ts-node deploy-testnet.ts",
+    "deploy:mainnet": "ts-node deploy-mainnet.ts",
+    "deploy:localnet": "ts-node deploy-localnet.ts",
+    "deploy:all": "ts-node deploy-all.ts",
+    "verify:testnet": "ts-node verify-deployment.ts --network=testnet",
+    "verify:mainnet": "ts-node verify-deployment.ts --network=mainnet",
+    "verify:localnet": "ts-node verify-deployment.ts --network=localnet",
+    "build": "tsc",
+    "clean": "rm -rf dist *.json"
+  },
+  "keywords": [
+    "algorand",
+    "smart-contracts",
+    "deployment",
+    "dirs",
+    "decentralized-identity"
+  ],
+  "author": "DIRS Team",
+  "license": "MIT",
+  "dependencies": {
+    "algosdk": "^2.7.0",
+    "@algorandfoundation/tealscript": "^0.100.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  }
+}
