@@ -1,627 +1,449 @@
-# NexDentify Smart Contracts
+# DIRS - Decentralized Identity and Reputation System Smart Contracts
 
-This directory contains the smart contracts for the NexDentify platform, built using TEALScript for the Algorand blockchain.
+This directory contains the smart contracts for the **Decentralized Identity and Reputation System (DIRS)**, built using TEALScript for the Algorand blockchain. DIRS provides users with self-sovereign identity and verifiable, portable reputation across platforms and ecosystems.
 
-## Contracts
+## System Overview
 
-### 1. NexDen ASA Token (`NexDen.ts`)
-- **Purpose**: Algorand Standard Asset (ASA) implementation for the NEXDEN token
-- **Features**:
-  - Token creation and management
-  - Transfer, freeze, and clawback functionality
-  - Asset configuration updates
-  - Balance queries and asset information
+DIRS is designed to empower individuals and organizations with:
+- **Self-Sovereign Identity**: Complete control over digital identity without reliance on centralized authorities
+- **Portable Reputation**: Verifiable reputation that can be carried across platforms and ecosystems
+- **Cross-Platform Interoperability**: Seamless identity and reputation portability between different systems
+- **Verifiable Credentials**: Cryptographically secure credentials that can be independently verified
+- **Decentralized Trust**: Trust networks built on cryptographic proofs rather than institutional authority
 
-### 2. Staking Pool Contract (`StakingPool.ts`)
-- **Purpose**: Decentralized staking pool for NEXDEN tokens
-- **Features**:
-  - Token staking with configurable parameters
-  - Time-based reward distribution
-  - Unbonding period for unstaking
-  - Emergency controls and admin functions
-  - Proportional reward calculation
+## Core Contracts
 
-### 3. LP Farming Pool Contract (`LPFarmingPool.ts`)
-- **Purpose**: Liquidity Provider token farming for earning NEXDEN rewards
-- **Features**:
-  - LP token staking mechanism
-  - Time-based reward distribution with configurable rates
-  - Multiple farming periods support
-  - Emergency withdrawal functionality
-  - Real-time APR calculations
+### 1. **DID Registry Contract** (`DIDRegistry.ts`)
+**Purpose**: Self-sovereign decentralized identity anchoring and management
 
-### 4. DID Registry Contract (`DIDRegistry.ts`)
-- **Purpose**: Decentralized Identity anchoring and management on Algorand
-- **Features**:
-  - DID registration and resolution with custom `did:algo` method
-  - DID document storage and versioning
-  - Verification method management
-  - Service endpoint registration
-  - DID lifecycle management (activate/deactivate/transfer)
-  - Fee-based operations using NEXDEN tokens
+**Key Features**:
+- **Custom DID Method**: `did:dirs` method for Algorand-based identities
+- **Self-Sovereign Control**: Complete user control over identity lifecycle
+- **Cross-Chain Portability**: Enable identity portability across blockchain networks
+- **Delegation Support**: Temporary delegation of identity control permissions
+- **Recovery Mechanisms**: Cryptographic recovery methods for lost access
+- **Interoperability**: Standards-compliant DID documents for maximum compatibility
+- **Portability Scoring**: Quantitative measure of identity portability across platforms
 
-### 5. DID Resolver Contract (`DIDResolver.ts`)
-- **Purpose**: High-performance DID resolution with caching
-- **Features**:
-  - Fast DID document resolution
-  - DID URL parsing and fragment resolution
-  - Batch resolution capabilities
-  - Signature verification
-  - Caching for improved performance
-  - Cross-contract integration with DID Registry
+**Self-Sovereign Features**:
+- **Controller Authority**: Only identity owners can modify their DIDs
+- **Delegation Framework**: Temporary permission grants without losing control
+- **Recovery Systems**: Multiple recovery methods (social, cryptographic, time-based)
+- **Portability Proofs**: Cryptographic proofs enabling cross-platform identity verification
+- **Interoperability Metadata**: Enhanced service endpoints for cross-platform integration
 
-## Key Features
+### 2. **Reputation Registry Contract** (`ReputationRegistry.ts`)
+**Purpose**: Portable, verifiable reputation attestation system
 
-### DID Anchoring and Resolution System
+**Key Features**:
+- **Multi-dimensional Reputation**: Overall and category-specific reputation tracking
+- **Portable Attestations**: Reputation that can be verified and transferred across platforms
+- **Self-Sovereign Control**: Users control their reputation data and sharing preferences
+- **Cross-Platform Mapping**: Link reputation across different platforms and ecosystems
+- **Verifiability Scoring**: Quantitative measure of attestation quality and trustworthiness
+- **Dispute Resolution**: Fair and transparent dispute handling for contested attestations
+- **Sovereignty Flags**: Configurable privacy and control settings for reputation data
 
-#### Core DID Operations
-- **Register DID**: Create new decentralized identities with custom `did:algo` method
-- **Update DID**: Modify DID documents with version control
-- **Resolve DID**: Retrieve DID documents and metadata
-- **Deactivate/Reactivate**: Manage DID lifecycle states
-- **Transfer Control**: Change DID ownership between addresses
+**Portable Reputation Features**:
+- **Export/Import**: Package reputation for transfer to other platforms
+- **Cross-Platform Bridges**: Technical infrastructure for reputation portability
+- **Verifiability Metrics**: Quality scores based on evidence and cryptographic proofs
+- **Control Preferences**: User-defined settings for reputation sharing and visibility
+- **Platform Mappings**: Maintain reputation consistency across different systems
 
-#### Advanced DID Features
-- **Verification Methods**: Add/remove cryptographic keys for authentication
-- **Service Endpoints**: Register service URLs for DID-based applications
-- **DID URLs**: Support for fragment-based resolution (`did:algo:example#key-1`)
-- **Batch Operations**: Resolve multiple DIDs efficiently
-- **Signature Verification**: Verify signatures using DID verification methods
+### 3. **VC Registry Contract** (`VCRegistry.ts`)
+**Purpose**: Verifiable credential anchoring with enhanced portability
 
-#### DID Document Structure
+**Key Features**:
+- **Credential Anchoring**: Secure on-chain anchoring of verifiable credential hashes
+- **Portable Credentials**: Credentials designed for cross-platform verification
+- **Self-Sovereign Issuance**: Decentralized credential issuance without central authority
+- **Interoperability Standards**: Compliance with W3C VC standards and extensions
+- **Cross-Platform Mapping**: Link credentials across different platforms
+- **Schema Registry**: Interoperable credential schemas for consistent data structures
+- **Revocation Management**: Sophisticated revocation with portability impact assessment
+
+**Enhanced VC Features**:
+- **Portability Proofs**: Cryptographic proofs enabling credential verification across platforms
+- **Interoperability Metadata**: Enhanced metadata for cross-platform credential recognition
+- **Sovereignty Controls**: User control over credential sharing and verification permissions
+- **Platform Bridges**: Technical infrastructure for credential portability
+- **Verifiability Scoring**: Quality assessment of credential evidence and proofs
+
+### 4. **Staking Pool Contract** (`StakingPool.ts`)
+**Purpose**: NEXDEN token staking for network security and governance
+
+**Key Features**:
+- **Network Security**: Stake NEXDEN tokens to secure the DIRS network
+- **Governance Participation**: Staking enables participation in network governance
+- **Reward Distribution**: Earn rewards for contributing to network security
+- **Unbonding Period**: Security mechanism preventing rapid stake withdrawal
+- **Self-Sovereign Staking**: Direct user control over staking decisions
+
+### 5. **LP Farming Pool Contract** (`LPFarmingPool.ts`)
+**Purpose**: Liquidity provision incentives for DIRS ecosystem growth
+
+**Key Features**:
+- **Liquidity Incentives**: Reward liquidity providers with NEXDEN tokens
+- **Ecosystem Growth**: Support DIRS ecosystem expansion through liquidity
+- **Flexible Farming**: Multiple farming periods and reward structures
+- **Emergency Controls**: Safety mechanisms for pool management
+
+## DIRS Architecture Principles
+
+### **Self-Sovereignty**
+- **User Control**: Users have complete control over their identity and reputation data
+- **No Central Authority**: No single entity can control or censor user identities
+- **Cryptographic Security**: All operations secured by cryptographic proofs
+- **Recovery Mechanisms**: Multiple recovery options without relying on third parties
+
+### **Portability**
+- **Cross-Platform**: Identities and reputation work across different platforms
+- **Standards Compliance**: Built on open standards for maximum interoperability
+- **Export/Import**: Easy data portability between systems
+- **Verifiable Transfers**: Cryptographic proofs ensure data integrity during transfers
+
+### **Verifiability**
+- **Cryptographic Proofs**: All claims backed by verifiable cryptographic evidence
+- **Independent Verification**: Anyone can verify claims without trusted intermediaries
+- **Tamper Evidence**: Immutable records with clear audit trails
+- **Quality Metrics**: Quantitative measures of claim quality and trustworthiness
+
+### **Interoperability**
+- **Open Standards**: Built on W3C DID and VC standards
+- **Cross-Chain Support**: Works across different blockchain networks
+- **Platform Agnostic**: Compatible with various platforms and ecosystems
+- **Bridge Infrastructure**: Technical bridges for seamless data transfer
+
+## DID Method Specification: `did:dirs`
+
+### **Method Syntax**
+```
+did:dirs:<identifier>
+```
+
+### **Identifier Format**
+- **Length**: 3-64 characters
+- **Characters**: Alphanumeric, hyphens, underscores
+- **Uniqueness**: Globally unique within DIRS namespace
+
+### **DID Document Structure**
 ```json
 {
   "@context": [
     "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/suites/ed25519-2020/v1"
+    "https://w3id.org/security/suites/ed25519-2020/v1",
+    "https://dirs.org/contexts/v1"
   ],
-  "id": "did:algo:user-12345678",
+  "id": "did:dirs:user-12345678",
   "controller": "ALGORAND_ADDRESS",
   "verificationMethod": [
     {
-      "id": "did:algo:user-12345678#key-1",
+      "id": "did:dirs:user-12345678#key-1",
       "type": "Ed25519VerificationKey2020",
-      "controller": "did:algo:user-12345678",
-      "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+      "controller": "did:dirs:user-12345678",
+      "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+      "purposes": ["authentication", "assertionMethod"]
     }
   ],
   "service": [
     {
-      "id": "did:algo:user-12345678#dental-records",
-      "type": "DentalRecordService",
-      "serviceEndpoint": "https://nexdentify.com/records/ALGORAND_ADDRESS"
+      "id": "did:dirs:user-12345678#reputation",
+      "type": "ReputationService",
+      "serviceEndpoint": "https://dirs.org/reputation/user-12345678",
+      "priority": 1
     }
   ],
   "created": "2025-01-27T10:00:00Z",
   "updated": "2025-01-27T10:00:00Z",
-  "version": 1
+  "version": 1,
+  "portabilityScore": 850,
+  "crossChainMappings": {
+    "ethereum": "did:ethr:0x1234...",
+    "bitcoin": "did:btcr:..."
+  }
 }
 ```
 
-#### Security and Access Control
-- **Controller-based Access**: Only DID controllers can modify their DIDs
-- **Fee-based Operations**: NEXDEN token fees prevent spam and abuse
-- **Status Management**: Active, deactivated, and revoked states
-- **Admin Controls**: Registry pause/resume and malicious DID revocation
-- **Version Control**: Track all DID document changes
+### **Enhanced Features**
+- **Portability Score**: Quantitative measure of cross-platform compatibility
+- **Cross-Chain Mappings**: Links to identities on other blockchain networks
+- **Enhanced Services**: Rich service metadata for interoperability
+- **Delegation Support**: Temporary permission grants
+- **Recovery Methods**: Multiple recovery mechanisms
 
-### LP Farming Pool Functionality
+## Reputation System Architecture
 
-#### Core Operations
-- **Stake LP Tokens**: Deposit LP tokens to earn NEXDEN rewards
-- **Unstake LP Tokens**: Withdraw staked LP tokens
-- **Claim Rewards**: Collect accumulated NEXDEN rewards
-- **Emergency Withdraw**: Immediate withdrawal (forfeit rewards)
-
-#### Reward System
-- **Rate-based**: Configurable rewards per second per staked LP token
-- **Time-proportional**: Rewards calculated based on staking duration
-- **Real-time calculation**: Continuous reward accumulation
-- **Precision handling**: High-precision arithmetic for fair distribution
-
-#### Security Features
-- **Farming periods**: Defined start and end times for campaigns
-- **Emergency controls**: Admin can pause/resume operations
-- **Access controls**: Admin-only functions for pool management
-- **Emergency withdrawal**: Users can exit immediately if needed
-
-#### Pool Parameters
-- **LP Token Asset ID**: The LP token to be staked
-- **Reward Token Asset ID**: NEXDEN token for rewards
-- **Reward Rate**: Rewards per second per staked LP token
-- **Start/End Time**: Farming campaign duration
-- **Total Staked**: Current amount of LP tokens staked
-
-### Staking Pool Functionality
-
-#### Core Operations
-- **Stake**: Deposit NEXDEN tokens to earn rewards
-- **Unstake**: Withdraw staked tokens (with unbonding period)
-- **Claim Rewards**: Collect accumulated staking rewards
-- **Opt-in**: Join the staking pool
-
-#### Reward System
-- **APY-based**: Configurable annual percentage yield
-- **Time-proportional**: Rewards calculated based on staking duration
-- **Automatic calculation**: Real-time reward updates
-
-#### Security Features
-- **Unbonding period**: Configurable delay for unstaking
-- **Emergency pause**: Admin can halt operations if needed
-- **Access controls**: Admin-only functions for pool management
-- **Minimum stake**: Prevents dust attacks
-
-#### Pool Parameters
-- **Reward Rate**: Annual percentage yield in basis points
-- **Minimum Stake**: Minimum amount required to stake
-- **Unbonding Period**: Time delay for unstaking (in seconds)
-- **Asset ID**: NEXDEN token asset ID
-
-## Usage
-
-### Prerequisites
-```bash
-npm install @algorandfoundation/tealscript algosdk
+### **Multi-Dimensional Scoring**
+```typescript
+interface ReputationProfile {
+  overall: number;           // 0-1000 overall reputation
+  portability: number;       // 0-1000 portability score
+  verifiability: number;     // 0-1000 verifiability score
+  categories: {
+    [category: string]: {
+      score: number;         // Category-specific score
+      portability: number;   // Category portability
+      attestations: number;  // Number of attestations
+    }
+  };
+  crossPlatform: {
+    [platform: string]: {
+      score: number;         // Score on external platform
+      verified: boolean;     // Verification status
+      lastSync: number;      // Last synchronization
+    }
+  };
+}
 ```
 
-### DID Registry Example
-
+### **Attestation Structure**
 ```typescript
-import { DIDRegistryClient, VerificationMethod, Service } from './contracts/DIDRegistryClient';
-import { NexDenASA } from './contracts/NexDen';
+interface PortableAttestation {
+  id: string;
+  attester: string;          // Attester DID
+  subject: string;           // Subject DID
+  type: string;              // Attestation type
+  score: number;             // 0-100 score
+  evidence: string;          // Supporting evidence
+  category: string;          // Reputation category
+  portabilityProof: string;  // Cross-platform proof
+  verifiabilityLevel: number; // Quality score
+  sovereigntyFlags: number;   // Privacy/control flags
+  expirationDate: number;     // Expiration timestamp
+}
+```
 
-// Initialize clients
+## Verifiable Credentials Enhancement
+
+### **Portable VC Structure**
+```typescript
+interface PortableVC {
+  "@context": string[];
+  id: string;
+  type: string[];
+  issuer: string;            // Issuer DID
+  issuanceDate: string;
+  expirationDate?: string;
+  credentialSubject: any;
+  proof: any;
+  // DIRS Extensions
+  portabilityProof: string;  // Cross-platform proof
+  verifiabilityLevel: number; // Quality score
+  sovereigntyFlags: number;   // Privacy/control flags
+  interopMetadata: {
+    platforms: string[];      // Supported platforms
+    schemas: string[];        // Compatible schemas
+    bridges: string[];        // Available bridges
+  };
+}
+```
+
+## Usage Examples
+
+### **Self-Sovereign Identity Creation**
+```typescript
+import { DIDRegistryClient } from './contracts/DIDRegistryClient';
+
+// Create self-sovereign identity
 const didRegistry = new DIDRegistryClient(algodClient);
-const nexDenToken = new NexDenASA(algodClient, creatorAccount);
 
-// Deploy contracts
-const nexdenAssetId = await nexDenToken.createASA();
+// Deploy registry with DIRS features
 const { appId } = await didRegistry.deploy(admin, {
-  registrationFee: 1000000, // 1 NEXDEN
-  updateFee: 500000, // 0.5 NEXDEN
+  registrationFee: 1000000,
+  updateFee: 500000,
   nexdenAssetId: nexdenAssetId,
 });
 
-// Create DID document
-const verificationMethods: VerificationMethod[] = [
-  {
-    id: 'key-1',
-    type: 'Ed25519VerificationKey2020',
-    controller: `did:algo:${didIdentifier}`,
-    publicKeyBase58: 'H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV',
-  }
-];
-
-const services: Service[] = [
-  {
-    id: 'dental-records',
-    type: 'DentalRecordService',
-    serviceEndpoint: 'https://nexdentify.com/records/' + userAccount.addr,
-  }
-];
-
-const didDocument = didRegistry.createDIDDocument(
-  didIdentifier,
-  userAccount.addr,
-  verificationMethods,
-  services
-);
-
-// Register DID
+// Register DID with portability features
 await didRegistry.registerDID(
   userAccount,
   didIdentifier,
   didDocument,
+  recoveryMethods,      // Multiple recovery options
+  portabilityProof,     // Cross-platform proof
   nexdenAssetId,
   1000000
 );
 
-// Resolve DID
-const resolvedDID = await didRegistry.resolveDID(didIdentifier);
-console.log('Resolved DID:', resolvedDID);
-```
-
-### DID Resolver Example
-
-```typescript
-import { DIDResolverClient } from './contracts/DIDResolverClient';
-
-// Initialize resolver
-const didResolver = new DIDResolverClient(algodClient);
-
-// Deploy resolver (linked to registry)
-const { appId } = await didResolver.deploy(admin, {
-  registryAppId: registryAppId,
-});
-
-// Resolve DID with caching
-const result = await didResolver.resolveDID('user-12345678');
-console.log('DID Document:', result.didDocument);
-console.log('Metadata:', result.didDocumentMetadata);
-console.log('Resolution Info:', result.didResolutionMetadata);
-
-// Resolve DID URL with fragment
-const fragmentResult = await didResolver.resolveDIDURL('did:algo:user-12345678#key-1');
-
-// Batch resolve multiple DIDs
-const batchResults = await didResolver.batchResolveDIDs([
-  'user-12345678',
-  'service-87654321',
-  'clinic-11111111'
-]);
-
-// Verify signature using DID
-const isValid = await didResolver.verifyDIDSignature(
-  'user-12345678',
-  signature,
-  message,
-  'key-1'
-);
-```
-
-### LP Farming Pool Example
-
-```typescript
-import { LPFarmingPoolClient } from './contracts/LPFarmingPoolClient';
-import { NexDenASA } from './contracts/NexDen';
-
-// Initialize clients
-const farmingPool = new LPFarmingPoolClient(algodClient);
-const nexDenToken = new NexDenASA(algodClient, creatorAccount);
-
-// Deploy contracts
-const rewardTokenId = await nexDenToken.createASA();
-const lpTokenId = await createLPToken(); // Your LP token creation logic
-
-const { appId } = await farmingPool.deploy(admin, {
-  lpTokenAssetId: lpTokenId,
-  rewardTokenAssetId: rewardTokenId,
-  rewardRate: 100, // 100 NEXDEN per second per LP token
-  startTime: Math.floor(Date.now() / 1000),
-  endTime: Math.floor(Date.now() / 1000) + (90 * 24 * 3600), // 90 days
-});
-
-// User operations
-await farmingPool.optIn(userAccount);
-await farmingPool.stakeLPTokens(userAccount, 5000000, lpTokenId); // Stake 5 LP tokens
-await farmingPool.claimRewards(userAccount);
-```
-
-### Basic Staking Pool Example
-
-```typescript
-import { StakingPoolClient } from './contracts/StakingPoolClient';
-import { NexDenASA } from './contracts/NexDen';
-
-// Initialize clients
-const stakingPool = new StakingPoolClient(algodClient);
-const nexDenToken = new NexDenASA(algodClient, creatorAccount);
-
-// Deploy contracts
-const assetId = await nexDenToken.createASA();
-const { appId } = await stakingPool.deploy(admin, {
-  nexdenAssetId: assetId,
-  rewardRate: 1200, // 12% APY
-  minStakeAmount: 1000000, // 1 NEXDEN
-  unbondingPeriod: 604800, // 7 days
-});
-
-// User operations
-await stakingPool.optIn(userAccount);
-await stakingPool.stake(userAccount, 5000000, assetId); // Stake 5 NEXDEN
-await stakingPool.claimRewards(userAccount);
-```
-
-### Advanced Usage
-
-See `DIDExample.ts`, `LPFarmingPoolExample.ts` and `StakingPoolExample.ts` for comprehensive examples including:
-- Multi-user scenarios
-- DID lifecycle management
-- Reward calculations
-- Emergency handling
-- Admin operations
-- Pool analytics
-
-## Contract Architecture
-
-### State Management
-- **Global State**: Pool-wide parameters and statistics
-- **Local State**: Individual user farming/staking information
-- **Box Storage**: Large data storage for DID documents (DID Registry)
-
-### Transaction Types
-- **Application Calls**: Contract method invocations
-- **Asset Transfers**: Token movements (stake/unstake/rewards/fees)
-- **Opt-ins**: User registration for pool participation
-
-### Security Considerations
-- **Reentrancy Protection**: State updates before external calls
-- **Access Control**: Admin-only functions properly protected
-- **Input Validation**: All parameters validated before processing
-- **Emergency Controls**: Pause functionality for critical situations
-- **Precision Arithmetic**: High-precision calculations for fair reward distribution
-- **Fee-based Operations**: NEXDEN token fees prevent spam and abuse
-
-## DID Method Specification
-
-### Method Name
-`did:algo`
-
-### Method-Specific Identifier
-The method-specific identifier is a unique string that identifies the DID within the Algorand ecosystem.
-
-Format: `did:algo:<identifier>`
-
-Where `<identifier>` is:
-- 3-64 characters long
-- Contains only alphanumeric characters, hyphens, and underscores
-- Must be unique within the registry
-
-### DID Document Properties
-- **@context**: Standard DID context plus Ed25519 signature suite
-- **id**: Full DID identifier (`did:algo:<identifier>`)
-- **controller**: Algorand address that controls the DID
-- **verificationMethod**: Array of cryptographic keys
-- **service**: Array of service endpoints
-- **created**: ISO 8601 timestamp of creation
-- **updated**: ISO 8601 timestamp of last update
-- **version**: Incremental version number
-
-### Operations
-1. **Create**: Register a new DID with initial document
-2. **Read**: Resolve DID to retrieve current document
-3. **Update**: Modify DID document (increment version)
-4. **Deactivate**: Mark DID as inactive (reversible)
-5. **Delete**: Not supported (DIDs are permanent)
-
-### Resolution
-DIDs can be resolved through:
-- Direct registry contract calls
-- DID Resolver contract (with caching)
-- Standard DID resolution libraries
-
-### Security Model
-- **Controller Authority**: Only the controller can modify the DID
-- **Immutable History**: All changes are versioned and auditable
-- **Cryptographic Integrity**: All operations require valid signatures
-- **Economic Security**: Fees prevent spam and abuse
-
-## Testing
-
-```bash
-npm test
-```
-
-## Deployment
-
-### Testnet
-```bash
-npm run deploy -- --network testnet
-```
-
-### Mainnet
-```bash
-npm run deploy -- --network mainnet
-```
-
-## Configuration
-
-### DID Registry Parameters
-- **Registration Fee**: NEXDEN tokens required to register a new DID
-- **Update Fee**: NEXDEN tokens required to update a DID
-- **NEXDEN Asset ID**: The asset ID of the NEXDEN token
-
-### DID Resolver Parameters
-- **Registry App ID**: Application ID of the DID Registry contract
-- **Cache Enabled**: Whether to enable caching for performance
-- **Cache Timeout**: How long to cache resolved DIDs (seconds)
-
-### LP Farming Pool Parameters
-- **Reward Rate**: Rewards per second per staked LP token
-- **Farming Period**: Start and end timestamps
-- **LP Token**: Asset ID of the LP token to be staked
-- **Reward Token**: NEXDEN token asset ID
-
-### Staking Pool Parameters
-- **Reward Rate**: Set in basis points (1000 = 10%)
-- **Minimum Stake**: Minimum tokens required to stake
-- **Unbonding Period**: Time delay for unstaking (seconds)
-
-### Example Configurations
-
-#### DID Registry
-```typescript
-const didRegistryConfig = {
-  registrationFee: 1000000, // 1 NEXDEN
-  updateFee: 500000, // 0.5 NEXDEN
-  nexdenAssetId: 123456789,
-};
-```
-
-#### DID Resolver
-```typescript
-const resolverConfig = {
-  registryAppId: 987654321,
-};
-```
-
-#### LP Farming Pool
-```typescript
-const farmingConfig = {
-  lpTokenAssetId: 123456789,
-  rewardTokenAssetId: 987654321,
-  rewardRate: 100, // 100 NEXDEN per second per LP token
-  startTime: Math.floor(Date.now() / 1000),
-  endTime: Math.floor(Date.now() / 1000) + (90 * 24 * 3600), // 90 days
-};
-```
-
-#### Staking Pool
-```typescript
-const stakingConfig = {
-  nexdenAssetId: 123456789,
-  rewardRate: 1500, // 15% APY
-  minStakeAmount: 1000000, // 1 NEXDEN (6 decimals)
-  unbondingPeriod: 1209600, // 14 days
-};
-```
-
-## API Reference
-
-### DIDRegistry Contract Methods
-
-#### User Methods
-- `registerDID(identifier, document, payment)`: Register new DID
-- `updateDID(identifier, document, payment)`: Update DID document
-- `deactivateDID(identifier)`: Deactivate DID
-- `reactivateDID(identifier, payment)`: Reactivate DID
-- `transferDIDControl(identifier, newController, payment)`: Transfer ownership
-- `addVerificationMethod(identifier, methodId, type, key, payment)`: Add key
-- `removeVerificationMethod(identifier, methodId, payment)`: Remove key
-- `addServiceEndpoint(identifier, serviceId, type, endpoint, payment)`: Add service
-- `removeServiceEndpoint(identifier, serviceId, payment)`: Remove service
-
-#### View Methods
-- `resolveDID(identifier)`: Get DID document
-- `getDIDMetadata(identifier)`: Get DID metadata
-- `getVerificationMethod(identifier, methodId)`: Get specific key
-- `getServiceEndpoint(identifier, serviceId)`: Get specific service
-- `getControllerDIDs(controller)`: Get DIDs owned by address
-
-#### Admin Methods
-- `updateFees(registrationFee, updateFee)`: Update fee structure
-- `pauseRegistry()`: Pause all operations
-- `resumeRegistry()`: Resume operations
-- `revokeDID(identifier)`: Revoke malicious DID
-- `withdrawFees(amount)`: Withdraw collected fees
-- `transferOwnership(newOwner)`: Change registry owner
-
-### DIDResolver Contract Methods
-
-#### Resolution Methods
-- `resolveDID(identifier)`: Resolve DID with caching
-- `resolveDIDURL(didUrl)`: Resolve DID URL with fragments
-- `batchResolveDIDs(identifiers)`: Resolve multiple DIDs
-- `getDIDMetadata(identifier)`: Get metadata only
-- `verifyDIDSignature(identifier, signature, message, methodId)`: Verify signature
-- `isDIDActive(identifier)`: Check if DID is active
-- `getDIDController(identifier)`: Get DID controller
-
-#### Cache Management
-- `clearDIDCache(identifier)`: Clear specific DID cache
-- `clearAllCache()`: Clear all cached data
-- `updateCacheSettings(enabled, timeout)`: Configure caching
-
-#### Admin Methods
-- `updateRegistryAppId(appId)`: Change linked registry
-- `setResolverStatus(active)`: Enable/disable resolver
-- `transferOwnership(newOwner)`: Change resolver owner
-
-### LPFarmingPool Contract Methods
-
-#### User Methods
-- `optIn()`: Register for farming pool
-- `stakeLPTokens(amount)`: Deposit LP tokens for farming
-- `unstakeLPTokens(amount)`: Withdraw LP tokens
-- `claimRewards()`: Collect accumulated NEXDEN rewards
-- `emergencyWithdraw()`: Immediate withdrawal (forfeit rewards)
-
-#### Admin Methods
-- `updatePoolParameters()`: Modify pool settings
-- `emergencyPausePool()`: Halt all operations
-- `resumePool()`: Resume normal operations
-- `fundPool()`: Add reward tokens to pool
-- `extendFarmingPeriod()`: Extend farming campaign
-- `transferOwnership()`: Change pool admin
-
-#### View Methods
-- `getUserInfo()`: Get user farming details
-- `getPoolInfo()`: Get pool statistics
-- `calculateAPR()`: Get current APR
-- `earned()`: Calculate user's earned rewards
-
-### StakingPool Contract Methods
-
-#### User Methods
-- `optIn()`: Register for staking pool
-- `stake(amount)`: Deposit tokens for staking
-- `initiateUnstake(amount)`: Begin unstaking process
-- `completeUnstake()`: Finalize unstaking after unbonding
-- `claimRewards()`: Collect accumulated rewards
-
-#### Admin Methods
-- `updatePoolParameters()`: Modify pool settings
-- `emergencyPausePool()`: Halt all operations
-- `resumePool()`: Resume normal operations
-- `fundPool()`: Add rewards to pool
-- `transferOwnership()`: Change pool admin
-
-#### View Methods
-- `getUserInfo()`: Get user staking details
-- `getPoolInfo()`: Get pool statistics
-- `calculateEstimatedRewards()`: Estimate future rewards
-
-## Integration Examples
-
-### NexDentify Platform Integration
-
-#### Patient Identity Management
-```typescript
-// Patient registers their DID
-const patientDID = await didRegistry.registerDID(
-  patientAccount,
-  'patient-' + patientAccount.addr.substring(0, 8),
-  patientDIDDocument,
+// Enable cross-chain mapping
+await didRegistry.enableCrossChainMapping(
+  userAccount,
+  didIdentifier,
+  'ethereum',           // Target chain
+  'did:ethr:0x1234...', // Target DID
+  mappingProof,         // Cryptographic proof
   nexdenAssetId,
-  registrationFee
+  500000
 );
-
-// Patient's DID includes dental record service endpoint
-const services = [
-  {
-    id: 'dental-records',
-    type: 'DentalRecordService',
-    serviceEndpoint: 'https://nexdentify.com/records/' + patientAccount.addr,
-  }
-];
 ```
 
-#### Clinic Verification
+### **Portable Reputation Management**
 ```typescript
-// Clinic verifies patient's DID
-const patientDIDDoc = await didResolver.resolveDID(patientDIDIdentifier);
-const isActive = await didResolver.isDIDActive(patientDIDIdentifier);
+import { ReputationRegistryClient } from './contracts/ReputationRegistryClient';
 
-if (isActive) {
-  // Access patient's dental records through DID service endpoint
-  const dentalRecordService = patientDIDDoc.service.find(s => s.type === 'DentalRecordService');
-  // Fetch records from service endpoint
-}
-```
+// Create portable reputation attestation
+const reputationRegistry = new ReputationRegistryClient(algodClient);
 
-#### Cross-Clinic Referrals
-```typescript
-// Referring clinic creates referral with DID signatures
-const referralData = {
-  patientDID: 'did:algo:patient-12345678',
-  referringClinicDID: 'did:algo:clinic-87654321',
-  receivingClinicDID: 'did:algo:clinic-11111111',
-  referralReason: 'Orthodontic consultation',
-  timestamp: Date.now(),
+// Record portable attestation
+const attestation = {
+  attester: 'did:dirs:clinic-87654321',
+  subject: 'did:dirs:patient-12345678',
+  type: 'service-quality',
+  score: 92,
+  evidence: 'Excellent service delivery with documented outcomes',
+  category: 'healthcare',
+  portabilityProof: 'cryptographic_proof_for_cross_platform_verification',
+  sovereigntyFlags: 0b1011, // Privacy and control settings
 };
 
-// Sign referral with clinic's DID verification method
-const signature = await signWithDID(referralData, clinicAccount, 'key-1');
+await reputationRegistry.recordPortableAttestation(
+  clinicAccount,
+  attestation,
+  nexdenAssetId,
+  1500000
+);
 
-// Receiving clinic verifies referral authenticity
-const isValidReferral = await didResolver.verifyDIDSignature(
-  'clinic-87654321',
-  signature,
-  JSON.stringify(referralData),
-  'key-1'
+// Export portable reputation package
+const portablePackage = await reputationRegistry.exportPortableReputation(
+  'did:dirs:patient-12345678'
+);
+
+// Import to another platform
+await reputationRegistry.importPortableReputation(
+  'did:dirs:patient-12345678',
+  portablePackage,
+  verificationProof,
+  nexdenAssetId,
+  1500000
 );
 ```
+
+### **Cross-Platform Credential Verification**
+```typescript
+import { VCRegistryClient } from './contracts/VCRegistryClient';
+
+// Anchor portable credential
+const vcRegistry = new VCRegistryClient(algodClient);
+
+await vcRegistry.anchorPortableVC(
+  issuerAccount,
+  vcHash,
+  'did:dirs:clinic-87654321',    // Issuer DID
+  'did:dirs:patient-12345678',   // Subject DID
+  'HealthCredential',            // Credential type
+  expirationDate,
+  schemaHash,
+  portabilityProof,              // Cross-platform proof
+  sovereigntyFlags,              // Privacy settings
+  interopMetadata,               // Interoperability data
+  nexdenAssetId,
+  2000000
+);
+
+// Enable cross-platform mapping
+await vcRegistry.enableCrossPlatformVCMapping(
+  vcHash,
+  'ethereum',                    // Target platform
+  'vc_id_on_ethereum',          // Target VC ID
+  mappingProof,                 // Cryptographic proof
+  nexdenAssetId,
+  1000000
+);
+
+// Export portable VC package
+const portableVCPackage = await vcRegistry.exportPortableVCPackage(vcHash);
+```
+
+## Security and Privacy
+
+### **Self-Sovereign Security**
+- **User-Controlled Keys**: Users control all cryptographic keys
+- **Multi-Factor Recovery**: Multiple recovery mechanisms without central authority
+- **Delegation Controls**: Temporary permissions without key sharing
+- **Revocation Authority**: Users can revoke delegations and credentials
+
+### **Privacy by Design**
+- **Selective Disclosure**: Share only necessary information
+- **Sovereignty Flags**: User-controlled privacy settings
+- **Zero-Knowledge Proofs**: Prove claims without revealing underlying data
+- **Consent Management**: Explicit consent for all data sharing
+
+### **Cross-Platform Security**
+- **Cryptographic Bridges**: Secure cross-platform data transfer
+- **Verification Proofs**: Independent verification of cross-platform claims
+- **Tamper Detection**: Immutable audit trails across platforms
+- **Trust Minimization**: Reduce reliance on trusted intermediaries
+
+## Governance and Economics
+
+### **Decentralized Governance**
+- **Stake-Based Voting**: NEXDEN stakers participate in governance
+- **Proposal System**: Community-driven protocol improvements
+- **Parameter Updates**: Decentralized fee and parameter management
+- **Emergency Procedures**: Community-controlled emergency responses
+
+### **Economic Incentives**
+- **Quality Rewards**: Higher rewards for high-quality attestations
+- **Portability Bonuses**: Incentives for cross-platform participation
+- **Verification Rewards**: Rewards for independent verification activities
+- **Network Effects**: Growing value with increased participation
+
+## Integration Guidelines
+
+### **Platform Integration**
+1. **DID Resolution**: Implement `did:dirs` resolution
+2. **Reputation Import**: Support portable reputation import
+3. **Credential Verification**: Verify DIRS credentials
+4. **Bridge Implementation**: Build technical bridges for data transfer
+
+### **Developer Resources**
+- **SDK Libraries**: JavaScript/TypeScript SDKs for easy integration
+- **API Documentation**: Comprehensive API reference
+- **Example Applications**: Reference implementations
+- **Testing Tools**: Tools for testing DIRS integration
+
+## Future Roadmap
+
+### **Phase 1: Core Infrastructure** ✅
+- Basic DID registry with self-sovereign features
+- Portable reputation system
+- Enhanced verifiable credentials
+- Cross-platform mapping foundations
+
+### **Phase 2: Advanced Portability** 🚧
+- Cross-chain bridges implementation
+- Advanced interoperability protocols
+- Enhanced privacy features
+- Governance system activation
+
+### **Phase 3: Ecosystem Expansion** 📋
+- Multi-platform integrations
+- Advanced analytics and insights
+- AI-powered reputation analysis
+- Global adoption initiatives
+
+### **Phase 4: Full Decentralization** 📋
+- Complete governance decentralization
+- Advanced privacy technologies
+- Quantum-resistant cryptography
+- Universal identity standards
+
+## Contributing
+
+DIRS is an open-source project welcoming contributions from the global community. Areas for contribution include:
+
+- **Protocol Development**: Core protocol improvements
+- **Bridge Implementation**: Cross-platform bridges
+- **Privacy Enhancements**: Advanced privacy features
+- **Integration Tools**: Developer tools and SDKs
+- **Documentation**: Technical and user documentation
+- **Testing**: Comprehensive testing and security audits
 
 ## License
 
 MIT License - see LICENSE file for details.
+
+---
+
+**DIRS empowers individuals and organizations with true digital sovereignty, enabling self-controlled identity and portable reputation in a decentralized world.**

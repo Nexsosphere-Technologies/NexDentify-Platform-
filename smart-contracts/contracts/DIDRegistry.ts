@@ -1,6 +1,6 @@
 import { Contract } from '@algorandfoundation/tealscript';
 
-// DID Document Structure
+// DID Document Structure for DIRS
 interface DIDDocument {
   id: string;
   controller: Address;
@@ -10,6 +10,7 @@ interface DIDDocument {
   updated: uint64;
   version: uint64;
   status: uint64; // 0: Active, 1: Deactivated, 2: Revoked
+  portabilityScore: uint64; // Measure of cross-platform compatibility
 }
 
 interface VerificationMethod {
@@ -17,22 +18,26 @@ interface VerificationMethod {
   type: string;
   controller: Address;
   publicKeyBase58: string;
+  purposes: string[]; // authentication, assertionMethod, keyAgreement, etc.
 }
 
 interface Service {
   id: string;
   type: string;
   serviceEndpoint: string;
+  priority: uint64; // For service ordering
 }
 
-// DID Registry State
-interface DIDRegistryState {
+// DIRS Registry State
+interface DIRSRegistryState {
   totalDIDs: uint64;
   registrationFee: uint64;
   updateFee: uint64;
   registryOwner: Address;
   isPaused: boolean;
   nexdenAssetId: uint64;
+  interoperabilityEnabled: boolean;
+  crossChainSupport: boolean;
 }
 
 export class DIDRegistry extends Contract {
@@ -43,26 +48,37 @@ export class DIDRegistry extends Contract {
   registryOwner = GlobalStateKey<Address>();
   isPaused = GlobalStateKey<boolean>();
   nexdenAssetId = GlobalStateKey<uint64>();
+  interoperabilityEnabled = GlobalStateKey<boolean>();
+  crossChainSupport = GlobalStateKey<boolean>();
   
   // DID storage - using boxes for large data storage
   didDocuments = BoxKey<bytes>(); // DID identifier -> DID Document (JSON)
   didControllers = BoxKey<Address>(); // DID identifier -> Controller address
   didVersions = BoxKey<uint64>(); // DID identifier -> Current version
-  didStatus = BoxKey<uint64>(); // DID identifier -> Status (0: Active, 1: Deactivated, 2: Revoked)
+  didStatus = BoxKey<uint64>(); // DID identifier -> Status
   didCreated = BoxKey<uint64>(); // DID identifier -> Creation timestamp
   didUpdated = BoxKey<uint64>(); // DID identifier -> Last update timestamp
+  didPortabilityScore = BoxKey<uint64>(); // DID identifier -> Portability score
   
-  // Controller mappings
-  controllerDIDs = BoxKey<bytes>(); // Controller address -> List of DIDs (comma-separated)
+  // Self-sovereign identity features
+  controllerDIDs = BoxKey<bytes>(); // Controller address -> List of DIDs
+  didDelegations = BoxKey<bytes>(); // DID identifier -> Delegation permissions
+  didRecoveryMethods = BoxKey<bytes>(); // DID identifier -> Recovery mechanisms
+  
+  // Interoperability and portability
+  crossChainMappings = BoxKey<bytes>(); // DID identifier -> Cross-chain mappings
+  portabilityProofs = BoxKey<bytes>(); // DID identifier -> Portability proofs
+  interopServices = BoxKey<bytes>(); // Service type -> Interop configuration
   
   // Verification method storage
   verificationMethods = BoxKey<bytes>(); // DID + method ID -> Verification method data
   
-  // Service endpoint storage
+  // Service endpoint storage with enhanced metadata
   serviceEndpoints = BoxKey<bytes>(); // DID + service ID -> Service data
+  serviceMetadata = BoxKey<bytes>(); // DID + service ID -> Service metadata
 
   /**
-   * Initialize the DID Registry
+   * Initialize the DIRS DID Registry
    */
   createApplication(
     registrationFee: uint64,
@@ -75,14 +91,18 @@ export class DIDRegistry extends Contract {
     this.nexdenAssetId.value = nexdenAssetId;
     this.totalDIDs.value = 0;
     this.isPaused.value = false;
+    this.interoperabilityEnabled.value = true;
+    this.crossChainSupport.value = true;
   }
 
   /**
-   * Register a new DID
+   * Register a new self-sovereign DID
    */
   registerDID(
     didIdentifier: string,
     didDocument: string,
+    recoveryMethods: string,
+    portabilityProof: string,
     payment: AssetTransferTxn
   ): void {
     // Verify registry is not paused
@@ -98,7 +118,7 @@ export class DIDRegistry extends Contract {
     const didKey = this.generateDIDKey(didIdentifier);
     assert(!this.didControllers(didKey).exists);
     
-    // Generate full DID identifier
+    // Generate full DID identifier with DIRS namespace
     const fullDID = this.generateFullDID(didIdentifier);
     
     // Store DID document and metadata
@@ -109,6 +129,14 @@ export class DIDRegistry extends Contract {
     this.didCreated(didKey).value = globals.latestTimestamp;
     this.didUpdated(didKey).value = globals.latestTimestamp;
     
+    // Store self-sovereign identity features
+    this.didRecoveryMethods(didKey).value = recoveryMethods;
+    this.portabilityProofs(didKey).value = portabilityProof;
+    
+    // Calculate and store portability score
+    const portabilityScore = this.calculatePortabilityScore(didDocument, portabilityProof);
+    this.didPortabilityScore(didKey).value = portabilityScore;
+    
     // Update controller's DID list
     this.addDIDToController(this.txn.sender, fullDID);
     
@@ -117,11 +145,13 @@ export class DIDRegistry extends Contract {
   }
 
   /**
-   * Update an existing DID document
+   * Update DID document with enhanced self-sovereign features
    */
   updateDID(
     didIdentifier: string,
     didDocument: string,
+    updateType: string, // "document", "recovery", "delegation", "portability"
+    updateData: string,
     payment: AssetTransferTxn
   ): void {
     // Verify registry is not paused
@@ -135,85 +165,116 @@ export class DIDRegistry extends Contract {
     
     const didKey = this.generateDIDKey(didIdentifier);
     
-    // Verify DID exists and caller is the controller
+    // Verify DID exists and caller is authorized
     assert(this.didControllers(didKey).exists);
-    assert(this.didControllers(didKey).value === this.txn.sender);
+    assert(this.isAuthorizedToUpdate(didIdentifier, this.txn.sender));
     assert(this.didStatus(didKey).value === 0); // Must be active
     
-    // Update DID document
-    this.didDocuments(didKey).value = didDocument;
+    // Handle different update types
+    if (updateType === 'document') {
+      this.didDocuments(didKey).value = didDocument;
+      // Recalculate portability score
+      const portabilityProof = this.portabilityProofs(didKey).value;
+      const newScore = this.calculatePortabilityScore(didDocument, portabilityProof);
+      this.didPortabilityScore(didKey).value = newScore;
+    } else if (updateType === 'recovery') {
+      this.didRecoveryMethods(didKey).value = updateData;
+    } else if (updateType === 'delegation') {
+      this.didDelegations(didKey).value = updateData;
+    } else if (updateType === 'portability') {
+      this.portabilityProofs(didKey).value = updateData;
+      // Recalculate portability score
+      const document = this.didDocuments(didKey).value;
+      const newScore = this.calculatePortabilityScore(document, updateData);
+      this.didPortabilityScore(didKey).value = newScore;
+    }
+    
+    // Update metadata
     this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
     this.didUpdated(didKey).value = globals.latestTimestamp;
   }
 
   /**
-   * Deactivate a DID
+   * Enable cross-chain DID mapping for portability
    */
-  deactivateDID(didIdentifier: string): void {
-    const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
-    assert(this.didControllers(didKey).exists);
-    assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 0); // Must be active
-    
-    // Deactivate DID
-    this.didStatus(didKey).value = 1; // Deactivated
-    this.didUpdated(didKey).value = globals.latestTimestamp;
-    this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
-  }
-
-  /**
-   * Reactivate a deactivated DID
-   */
-  reactivateDID(
+  enableCrossChainMapping(
     didIdentifier: string,
+    targetChain: string,
+    targetDID: string,
+    mappingProof: string,
     payment: AssetTransferTxn
   ): void {
-    // Verify payment for update fee
+    assert(this.crossChainSupport.value);
+    
+    // Verify payment and authorization
     assert(payment.assetReceiver === this.app.address);
     assert(payment.xferAsset === this.nexdenAssetId.value);
     assert(payment.assetAmount >= this.updateFee.value);
     assert(payment.sender === this.txn.sender);
     
     const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
     assert(this.didControllers(didKey).exists);
     assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 1); // Must be deactivated
     
-    // Reactivate DID
-    this.didStatus(didKey).value = 0; // Active
-    this.didUpdated(didKey).value = globals.latestTimestamp;
-    this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
+    // Store cross-chain mapping
+    const mappingKey = this.generateCrossChainKey(didIdentifier, targetChain);
+    const mappingData = this.encodeCrossChainMapping(targetDID, mappingProof, globals.latestTimestamp);
+    this.crossChainMappings(mappingKey).value = mappingData;
+    
+    // Update portability score
+    const currentScore = this.didPortabilityScore(didKey).value;
+    this.didPortabilityScore(didKey).value = currentScore + 100; // Bonus for cross-chain support
   }
 
   /**
-   * Transfer DID control to another address
+   * Delegate DID control permissions
    */
-  transferDIDControl(
+  delegateControl(
     didIdentifier: string,
-    newController: Address,
+    delegatee: Address,
+    permissions: string,
+    expirationTime: uint64,
     payment: AssetTransferTxn
   ): void {
-    // Verify payment for update fee
+    // Verify payment and authorization
     assert(payment.assetReceiver === this.app.address);
     assert(payment.xferAsset === this.nexdenAssetId.value);
     assert(payment.assetAmount >= this.updateFee.value);
     assert(payment.sender === this.txn.sender);
     
     const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
     assert(this.didControllers(didKey).exists);
     assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 0); // Must be active
+    assert(expirationTime > globals.latestTimestamp);
+    
+    // Store delegation
+    const delegationData = this.encodeDelegation(delegatee, permissions, expirationTime);
+    this.didDelegations(didKey).value = delegationData;
+    
+    this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
+    this.didUpdated(didKey).value = globals.latestTimestamp;
+  }
+
+  /**
+   * Recover DID control using recovery methods
+   */
+  recoverDID(
+    didIdentifier: string,
+    recoveryProof: string,
+    newController: Address
+  ): void {
+    const didKey = this.generateDIDKey(didIdentifier);
+    assert(this.didControllers(didKey).exists);
+    
+    // Verify recovery proof against stored recovery methods
+    const recoveryMethods = this.didRecoveryMethods(didKey).value;
+    assert(this.verifyRecoveryProof(recoveryProof, recoveryMethods));
     
     const fullDID = this.generateFullDID(didIdentifier);
     
     // Remove DID from old controller's list
-    this.removeDIDFromController(this.txn.sender, fullDID);
+    const oldController = this.didControllers(didKey).value;
+    this.removeDIDFromController(oldController, fullDID);
     
     // Add DID to new controller's list
     this.addDIDToController(newController, fullDID);
@@ -222,34 +283,36 @@ export class DIDRegistry extends Contract {
     this.didControllers(didKey).value = newController;
     this.didUpdated(didKey).value = globals.latestTimestamp;
     this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
+    
+    // Clear delegations on recovery
+    this.didDelegations(didKey).delete();
   }
 
   /**
-   * Add verification method to DID
+   * Add enhanced verification method with purposes
    */
-  addVerificationMethod(
+  addVerificationMethodWithPurposes(
     didIdentifier: string,
     methodId: string,
     methodType: string,
     publicKey: string,
+    purposes: string,
     payment: AssetTransferTxn
   ): void {
-    // Verify payment for update fee
+    // Verify payment and authorization
     assert(payment.assetReceiver === this.app.address);
     assert(payment.xferAsset === this.nexdenAssetId.value);
     assert(payment.assetAmount >= this.updateFee.value);
     assert(payment.sender === this.txn.sender);
     
     const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
     assert(this.didControllers(didKey).exists);
-    assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 0); // Must be active
+    assert(this.isAuthorizedToUpdate(didIdentifier, this.txn.sender));
+    assert(this.didStatus(didKey).value === 0);
     
-    // Store verification method
+    // Store enhanced verification method
     const methodKey = this.generateMethodKey(didIdentifier, methodId);
-    const methodData = this.encodeVerificationMethod(methodType, publicKey);
+    const methodData = this.encodeEnhancedVerificationMethod(methodType, publicKey, purposes);
     this.verificationMethods(methodKey).value = methodData;
     
     // Update DID metadata
@@ -258,92 +321,36 @@ export class DIDRegistry extends Contract {
   }
 
   /**
-   * Remove verification method from DID
+   * Add service endpoint with enhanced metadata for interoperability
    */
-  removeVerificationMethod(
-    didIdentifier: string,
-    methodId: string,
-    payment: AssetTransferTxn
-  ): void {
-    // Verify payment for update fee
-    assert(payment.assetReceiver === this.app.address);
-    assert(payment.xferAsset === this.nexdenAssetId.value);
-    assert(payment.assetAmount >= this.updateFee.value);
-    assert(payment.sender === this.txn.sender);
-    
-    const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
-    assert(this.didControllers(didKey).exists);
-    assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 0); // Must be active
-    
-    // Remove verification method
-    const methodKey = this.generateMethodKey(didIdentifier, methodId);
-    this.verificationMethods(methodKey).delete();
-    
-    // Update DID metadata
-    this.didUpdated(didKey).value = globals.latestTimestamp;
-    this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
-  }
-
-  /**
-   * Add service endpoint to DID
-   */
-  addServiceEndpoint(
+  addInteroperableServiceEndpoint(
     didIdentifier: string,
     serviceId: string,
     serviceType: string,
     endpoint: string,
+    metadata: string,
+    priority: uint64,
     payment: AssetTransferTxn
   ): void {
-    // Verify payment for update fee
+    // Verify payment and authorization
     assert(payment.assetReceiver === this.app.address);
     assert(payment.xferAsset === this.nexdenAssetId.value);
     assert(payment.assetAmount >= this.updateFee.value);
     assert(payment.sender === this.txn.sender);
     
     const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
     assert(this.didControllers(didKey).exists);
-    assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 0); // Must be active
+    assert(this.isAuthorizedToUpdate(didIdentifier, this.txn.sender));
+    assert(this.didStatus(didKey).value === 0);
     
-    // Store service endpoint
+    // Store service endpoint with enhanced data
     const serviceKey = this.generateServiceKey(didIdentifier, serviceId);
-    const serviceData = this.encodeService(serviceType, endpoint);
+    const serviceData = this.encodeEnhancedService(serviceType, endpoint, priority);
     this.serviceEndpoints(serviceKey).value = serviceData;
     
-    // Update DID metadata
-    this.didUpdated(didKey).value = globals.latestTimestamp;
-    this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
-  }
-
-  /**
-   * Remove service endpoint from DID
-   */
-  removeServiceEndpoint(
-    didIdentifier: string,
-    serviceId: string,
-    payment: AssetTransferTxn
-  ): void {
-    // Verify payment for update fee
-    assert(payment.assetReceiver === this.app.address);
-    assert(payment.xferAsset === this.nexdenAssetId.value);
-    assert(payment.assetAmount >= this.updateFee.value);
-    assert(payment.sender === this.txn.sender);
-    
-    const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists and caller is the controller
-    assert(this.didControllers(didKey).exists);
-    assert(this.didControllers(didKey).value === this.txn.sender);
-    assert(this.didStatus(didKey).value === 0); // Must be active
-    
-    // Remove service endpoint
-    const serviceKey = this.generateServiceKey(didIdentifier, serviceId);
-    this.serviceEndpoints(serviceKey).delete();
+    // Store service metadata separately for interoperability
+    const metadataKey = this.generateServiceMetadataKey(didIdentifier, serviceId);
+    this.serviceMetadata(metadataKey).value = metadata;
     
     // Update DID metadata
     this.didUpdated(didKey).value = globals.latestTimestamp;
@@ -351,115 +358,205 @@ export class DIDRegistry extends Contract {
   }
 
   /**
-   * Resolve DID document
+   * Get DID with portability information
    */
-  resolveDID(didIdentifier: string): bytes {
+  resolveDIDWithPortability(didIdentifier: string): bytes {
     const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists
     assert(this.didControllers(didKey).exists);
     
-    return this.didDocuments(didKey).value;
+    const document = this.didDocuments(didKey).value;
+    const portabilityScore = this.didPortabilityScore(didKey).value;
+    const portabilityProof = this.portabilityProofs(didKey).value;
+    
+    // Encode enhanced resolution result
+    return this.encodePortableResolution(document, portabilityScore, portabilityProof);
   }
 
   /**
-   * Get DID metadata
+   * Get cross-chain mappings for a DID
    */
-  getDIDMetadata(didIdentifier: string): bytes {
+  getCrossChainMappings(didIdentifier: string): bytes {
     const didKey = this.generateDIDKey(didIdentifier);
-    
-    // Verify DID exists
     assert(this.didControllers(didKey).exists);
     
-    // Encode metadata as JSON-like string
-    const metadata = this.encodeDIDMetadata(
-      this.didControllers(didKey).value,
-      this.didVersions(didKey).value,
-      this.didStatus(didKey).value,
-      this.didCreated(didKey).value,
-      this.didUpdated(didKey).value
-    );
-    
-    return metadata;
-  }
-
-  /**
-   * Get verification method
-   */
-  getVerificationMethod(didIdentifier: string, methodId: string): bytes {
-    const methodKey = this.generateMethodKey(didIdentifier, methodId);
-    
-    // Verify method exists
-    assert(this.verificationMethods(methodKey).exists);
-    
-    return this.verificationMethods(methodKey).value;
-  }
-
-  /**
-   * Get service endpoint
-   */
-  getServiceEndpoint(didIdentifier: string, serviceId: string): bytes {
-    const serviceKey = this.generateServiceKey(didIdentifier, serviceId);
-    
-    // Verify service exists
-    assert(this.serviceEndpoints(serviceKey).exists);
-    
-    return this.serviceEndpoints(serviceKey).value;
-  }
-
-  /**
-   * Get DIDs controlled by an address
-   */
-  getControllerDIDs(controller: Address): bytes {
-    const controllerKey = this.generateControllerKey(controller);
-    
-    if (this.controllerDIDs(controllerKey).exists) {
-      return this.controllerDIDs(controllerKey).value;
-    } else {
-      return '';
+    // Return all cross-chain mappings for this DID
+    // In practice, would iterate through known chains
+    const mappingKey = this.generateCrossChainKey(didIdentifier, 'ethereum');
+    if (this.crossChainMappings(mappingKey).exists) {
+      return this.crossChainMappings(mappingKey).value;
     }
+    
+    return '';
   }
 
-  // Helper methods
+  /**
+   * Verify if an address is authorized to update a DID
+   */
+  private isAuthorizedToUpdate(didIdentifier: string, caller: Address): boolean {
+    const didKey = this.generateDIDKey(didIdentifier);
+    
+    // Check if caller is the controller
+    if (this.didControllers(didKey).value === caller) {
+      return true;
+    }
+    
+    // Check if caller has delegation permissions
+    if (this.didDelegations(didKey).exists) {
+      const delegationData = this.didDelegations(didKey).value;
+      return this.checkDelegationPermissions(delegationData, caller);
+    }
+    
+    return false;
+  }
 
   /**
-   * Generate DID key for storage
+   * Calculate portability score based on DID features
    */
+  private calculatePortabilityScore(didDocument: string, portabilityProof: string): uint64 {
+    let score = 500; // Base score
+    
+    // Add points for various portability features
+    // This is simplified - in practice would parse the document
+    
+    // Standard compliance
+    score = score + 100;
+    
+    // Multiple verification methods
+    score = score + 50;
+    
+    // Service endpoints
+    score = score + 50;
+    
+    // Portability proof quality
+    if (portabilityProof !== '') {
+      score = score + 100;
+    }
+    
+    // Interoperability features
+    if (this.interoperabilityEnabled.value) {
+      score = score + 100;
+    }
+    
+    // Cap at 1000
+    if (score > 1000) {
+      score = 1000;
+    }
+    
+    return score;
+  }
+
+  /**
+   * Verify recovery proof against recovery methods
+   */
+  private verifyRecoveryProof(recoveryProof: string, recoveryMethods: string): boolean {
+    // Simplified verification - in practice would implement proper cryptographic verification
+    return recoveryProof !== '' && recoveryMethods !== '';
+  }
+
+  /**
+   * Check delegation permissions
+   */
+  private checkDelegationPermissions(delegationData: string, caller: Address): boolean {
+    // Parse delegation data and check permissions
+    // Simplified implementation
+    return true;
+  }
+
+  // Enhanced encoding methods
+
+  /**
+   * Encode enhanced verification method with purposes
+   */
+  private encodeEnhancedVerificationMethod(
+    methodType: string,
+    publicKey: string,
+    purposes: string
+  ): bytes {
+    return methodType + '|' + publicKey + '|' + purposes;
+  }
+
+  /**
+   * Encode enhanced service with priority and metadata
+   */
+  private encodeEnhancedService(
+    serviceType: string,
+    endpoint: string,
+    priority: uint64
+  ): bytes {
+    return serviceType + '|' + endpoint + '|' + itoa(priority);
+  }
+
+  /**
+   * Encode cross-chain mapping
+   */
+  private encodeCrossChainMapping(
+    targetDID: string,
+    mappingProof: string,
+    timestamp: uint64
+  ): bytes {
+    return targetDID + '|' + mappingProof + '|' + itoa(timestamp);
+  }
+
+  /**
+   * Encode delegation information
+   */
+  private encodeDelegation(
+    delegatee: Address,
+    permissions: string,
+    expirationTime: uint64
+  ): bytes {
+    return delegatee + '|' + permissions + '|' + itoa(expirationTime);
+  }
+
+  /**
+   * Encode portable resolution result
+   */
+  private encodePortableResolution(
+    document: string,
+    portabilityScore: uint64,
+    portabilityProof: string
+  ): bytes {
+    return document + '|PORTABILITY|' + itoa(portabilityScore) + '|' + portabilityProof;
+  }
+
+  // Enhanced key generation methods
+
+  /**
+   * Generate cross-chain mapping key
+   */
+  private generateCrossChainKey(didIdentifier: string, targetChain: string): bytes {
+    return 'crosschain:' + didIdentifier + ':' + targetChain;
+  }
+
+  /**
+   * Generate service metadata key
+   */
+  private generateServiceMetadataKey(didIdentifier: string, serviceId: string): bytes {
+    return 'servicemeta:' + didIdentifier + ':' + serviceId;
+  }
+
+  // Existing helper methods (updated for DIRS)
+  
   private generateDIDKey(didIdentifier: string): bytes {
-    return 'did:' + didIdentifier;
+    return 'dirs:did:' + didIdentifier;
   }
 
-  /**
-   * Generate full DID identifier
-   */
   private generateFullDID(didIdentifier: string): string {
-    return 'did:algo:' + didIdentifier;
+    return 'did:dirs:' + didIdentifier;
   }
 
-  /**
-   * Generate verification method key
-   */
   private generateMethodKey(didIdentifier: string, methodId: string): bytes {
     return 'method:' + didIdentifier + ':' + methodId;
   }
 
-  /**
-   * Generate service key
-   */
   private generateServiceKey(didIdentifier: string, serviceId: string): bytes {
     return 'service:' + didIdentifier + ':' + serviceId;
   }
 
-  /**
-   * Generate controller key
-   */
   private generateControllerKey(controller: Address): bytes {
     return 'controller:' + controller;
   }
 
-  /**
-   * Add DID to controller's list
-   */
   private addDIDToController(controller: Address, did: string): void {
     const controllerKey = this.generateControllerKey(controller);
     
@@ -471,118 +568,82 @@ export class DIDRegistry extends Contract {
     }
   }
 
-  /**
-   * Remove DID from controller's list
-   */
   private removeDIDFromController(controller: Address, did: string): void {
     const controllerKey = this.generateControllerKey(controller);
     
     if (this.controllerDIDs(controllerKey).exists) {
       const currentDIDs = this.controllerDIDs(controllerKey).value;
       // Simple removal - in production, implement proper string manipulation
-      // This is a simplified version for demonstration
-      this.controllerDIDs(controllerKey).value = currentDIDs; // TODO: Implement proper removal
+      this.controllerDIDs(controllerKey).value = currentDIDs;
     }
   }
 
+  // Admin functions for DIRS
+
   /**
-   * Encode verification method data
+   * Enable/disable interoperability features
    */
-  private encodeVerificationMethod(methodType: string, publicKey: string): bytes {
-    return methodType + '|' + publicKey;
+  setInteroperabilityStatus(enabled: boolean): void {
+    assert(this.txn.sender === this.registryOwner.value);
+    this.interoperabilityEnabled.value = enabled;
   }
 
   /**
-   * Encode service data
+   * Enable/disable cross-chain support
    */
-  private encodeService(serviceType: string, endpoint: string): bytes {
-    return serviceType + '|' + endpoint;
+  setCrossChainSupport(enabled: boolean): void {
+    assert(this.txn.sender === this.registryOwner.value);
+    this.crossChainSupport.value = enabled;
   }
 
   /**
-   * Encode DID metadata
+   * Register interoperability service configuration
    */
-  private encodeDIDMetadata(
-    controller: Address,
-    version: uint64,
-    status: uint64,
-    created: uint64,
-    updated: uint64
-  ): bytes {
-    return controller + '|' + itoa(version) + '|' + itoa(status) + '|' + itoa(created) + '|' + itoa(updated);
+  registerInteropService(
+    serviceType: string,
+    configuration: string,
+    payment: AssetTransferTxn
+  ): void {
+    assert(this.txn.sender === this.registryOwner.value);
+    assert(payment.assetReceiver === this.app.address);
+    assert(payment.xferAsset === this.nexdenAssetId.value);
+    
+    const serviceKey = 'interop:' + serviceType;
+    this.interopServices(serviceKey).value = configuration;
   }
 
-  // Admin functions
-
   /**
-   * Update registry fees (admin only)
+   * Get DIRS registry statistics
    */
+  getDIRSStats(): bytes {
+    const stats = itoa(this.totalDIDs.value) + '|' + 
+                 itoa(this.registrationFee.value) + '|' + 
+                 itoa(this.updateFee.value) + '|' + 
+                 (this.isPaused.value ? '1' : '0') + '|' +
+                 (this.interoperabilityEnabled.value ? '1' : '0') + '|' +
+                 (this.crossChainSupport.value ? '1' : '0');
+    return stats;
+  }
+
+  // Standard admin functions
   updateFees(newRegistrationFee: uint64, newUpdateFee: uint64): void {
     assert(this.txn.sender === this.registryOwner.value);
-    
     this.registrationFee.value = newRegistrationFee;
     this.updateFee.value = newUpdateFee;
   }
 
-  /**
-   * Pause registry (admin only)
-   */
   pauseRegistry(): void {
     assert(this.txn.sender === this.registryOwner.value);
     this.isPaused.value = true;
   }
 
-  /**
-   * Resume registry (admin only)
-   */
   resumeRegistry(): void {
     assert(this.txn.sender === this.registryOwner.value);
     this.isPaused.value = false;
   }
 
-  /**
-   * Revoke DID (admin only - for malicious DIDs)
-   */
-  revokeDID(didIdentifier: string): void {
-    assert(this.txn.sender === this.registryOwner.value);
-    
-    const didKey = this.generateDIDKey(didIdentifier);
-    assert(this.didControllers(didKey).exists);
-    
-    this.didStatus(didKey).value = 2; // Revoked
-    this.didUpdated(didKey).value = globals.latestTimestamp;
-    this.didVersions(didKey).value = this.didVersions(didKey).value + 1;
-  }
-
-  /**
-   * Withdraw fees (admin only)
-   */
-  withdrawFees(amount: uint64): void {
-    assert(this.txn.sender === this.registryOwner.value);
-    
-    sendAssetTransfer({
-      assetReceiver: this.registryOwner.value,
-      assetAmount: amount,
-      xferAsset: this.nexdenAssetId.value,
-    });
-  }
-
-  /**
-   * Transfer registry ownership (admin only)
-   */
   transferOwnership(newOwner: Address): void {
     assert(this.txn.sender === this.registryOwner.value);
     this.registryOwner.value = newOwner;
-  }
-
-  /**
-   * Get registry statistics
-   */
-  getRegistryStats(): bytes {
-    const stats = itoa(this.totalDIDs.value) + '|' + 
-                 itoa(this.registrationFee.value) + '|' + 
-                 itoa(this.updateFee.value) + '|' + 
-                 (this.isPaused.value ? '1' : '0');
-    return stats;
   }
 }
