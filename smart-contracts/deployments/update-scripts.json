@@ -1,0 +1,215 @@
+{
+  "scripts": {
+    "update:parameters": "ts-node update-contracts.ts --type=parameters",
+    "update:emergency": "ts-node update-contracts.ts --type=emergency",
+    "update:migration": "ts-node update-contracts.ts --type=migration",
+    
+    "params:fee-adjustment": "ts-node update-parameters.ts fee-adjustment",
+    "params:dirs-features": "ts-node update-parameters.ts dirs-features",
+    "params:staking-optimization": "ts-node update-parameters.ts staking-optimization",
+    "params:farming-extension": "ts-node update-parameters.ts farming-extension",
+    "params:comprehensive": "ts-node update-parameters.ts comprehensive",
+    "params:emergency-security": "ts-node update-parameters.ts emergency-security",
+    
+    "emergency:pause-all": "ts-node emergency-operations.ts pause-all",
+    "emergency:resume-all": "ts-node emergency-operations.ts resume-all",
+    "emergency:security-lockdown": "ts-node emergency-operations.ts security-lockdown",
+    "emergency:maintenance-mode": "ts-node emergency-operations.ts maintenance-mode",
+    "emergency:exit-maintenance": "ts-node emergency-operations.ts exit-maintenance",
+    "emergency:list": "ts-node emergency-operations.ts list",
+    
+    "migrate:v1-to-v2": "ts-node migration-tools.ts execute v1-to-v2",
+    "migrate:emergency": "ts-node migration-tools.ts execute emergency-migration",
+    "migrate:list": "ts-node migration-tools.ts list",
+    
+    "testnet:update:fees": "ts-node update-parameters.ts fee-adjustment --network=testnet",
+    "testnet:emergency:pause": "ts-node emergency-operations.ts pause-all --network=testnet",
+    "testnet:emergency:resume": "ts-node emergency-operations.ts resume-all --network=testnet",
+    
+    "mainnet:update:fees": "ts-node update-parameters.ts fee-adjustment --network=mainnet",
+    "mainnet:emergency:pause": "ts-node emergency-operations.ts pause-all --network=mainnet",
+    "mainnet:emergency:resume": "ts-node emergency-operations.ts resume-all --network=mainnet"
+  },
+  
+  "updateConfigurations": {
+    "fee-adjustment": {
+      "description": "Reduce fees for better accessibility",
+      "changes": {
+        "didRegistry": {
+          "registrationFee": "0.8 NEXDEN (from 1.0)",
+          "updateFee": "0.4 NEXDEN (from 0.5)"
+        },
+        "reputationRegistry": {
+          "attestationFee": "1.2 NEXDEN (from 1.5)",
+          "disputeFee": "2.5 NEXDEN (from 3.0)"
+        },
+        "vcRegistry": {
+          "registrationFee": "1.5 NEXDEN (from 2.0)",
+          "revocationFee": "0.8 NEXDEN (from 1.0)"
+        }
+      }
+    },
+    
+    "dirs-features": {
+      "description": "Enable all DIRS portability and sovereignty features",
+      "changes": {
+        "didRegistry": {
+          "interoperabilityEnabled": true,
+          "crossChainSupport": true
+        },
+        "reputationRegistry": {
+          "portabilityEnabled": true,
+          "crossPlatformSupport": true,
+          "selfSovereignMode": true
+        },
+        "vcRegistry": {
+          "portabilityEnabled": true,
+          "crossPlatformSupport": true,
+          "selfSovereignMode": true,
+          "interoperabilityLevel": 1000
+        }
+      }
+    },
+    
+    "staking-optimization": {
+      "description": "Optimize staking parameters for better user experience",
+      "changes": {
+        "stakingPool": {
+          "rewardRate": "15% APY (from 12%)",
+          "minStakeAmount": "0.5 NEXDEN (from 1.0)",
+          "unbondingPeriod": "5 days (from 7 days)"
+        }
+      }
+    },
+    
+    "farming-extension": {
+      "description": "Extend and enhance farming rewards",
+      "changes": {
+        "lpFarmingPool": {
+          "rewardRate": "150 NEXDEN/sec (from 100)",
+          "endTime": "Extended to 120 days (from 90)"
+        }
+      }
+    },
+    
+    "emergency-security": {
+      "description": "Emergency security measures with increased fees",
+      "changes": {
+        "didRegistry": {
+          "registrationFee": "5.0 NEXDEN (from 1.0)",
+          "updateFee": "2.5 NEXDEN (from 0.5)"
+        },
+        "reputationRegistry": {
+          "attestationFee": "10.0 NEXDEN (from 1.5)",
+          "disputeFee": "20.0 NEXDEN (from 3.0)"
+        },
+        "vcRegistry": {
+          "registrationFee": "10.0 NEXDEN (from 2.0)",
+          "revocationFee": "5.0 NEXDEN (from 1.0)"
+        }
+      }
+    }
+  },
+  
+  "emergencyOperations": {
+    "pause-all": {
+      "description": "Immediately pause all DIRS contracts",
+      "severity": "high",
+      "requiresConfirmation": true
+    },
+    "resume-all": {
+      "description": "Resume normal operations for all contracts",
+      "severity": "medium",
+      "requiresConfirmation": true
+    },
+    "security-lockdown": {
+      "description": "Full security lockdown with pause and malicious DID revocation",
+      "severity": "critical",
+      "requiresConfirmation": true
+    },
+    "maintenance-mode": {
+      "description": "Enter maintenance mode (pause contracts)",
+      "severity": "low",
+      "requiresConfirmation": false
+    },
+    "exit-maintenance": {
+      "description": "Exit maintenance mode (resume contracts)",
+      "severity": "low",
+      "requiresConfirmation": false
+    }
+  },
+  
+  "migrationPlans": {
+    "v1-to-v2": {
+      "description": "Migrate from DIRS v1.0 to v2.0 with enhanced features",
+      "estimatedDuration": "2-4 hours",
+      "steps": 10,
+      "risks": ["Data loss", "Downtime", "Reference failures"]
+    },
+    "emergency-migration": {
+      "description": "Emergency migration due to security issues",
+      "estimatedDuration": "30-60 minutes",
+      "steps": 5,
+      "risks": ["Data loss", "Extended downtime", "Incomplete fixes"]
+    }
+  },
+  
+  "usage": {
+    "examples": [
+      {
+        "description": "Update fees on testnet with dry run",
+        "command": "npm run params:fee-adjustment -- --network=testnet --dry-run"
+      },
+      {
+        "description": "Enable DIRS features on mainnet",
+        "command": "npm run params:dirs-features -- --network=mainnet"
+      },
+      {
+        "description": "Emergency pause all contracts on testnet",
+        "command": "npm run emergency:pause-all -- --network=testnet"
+      },
+      {
+        "description": "Execute v1 to v2 migration on testnet",
+        "command": "npm run migrate:v1-to-v2 -- --network=testnet --dry-run"
+      },
+      {
+        "description": "Update specific contracts only",
+        "command": "ts-node update-contracts.ts --type=parameters --contracts=didRegistry,vcRegistry --network=testnet"
+      }
+    ],
+    
+    "workflows": [
+      {
+        "name": "Parameter Update Workflow",
+        "steps": [
+          "1. Test on localnet: npm run params:fee-adjustment -- --network=localnet --dry-run",
+          "2. Test on testnet: npm run params:fee-adjustment -- --network=testnet --dry-run",
+          "3. Apply on testnet: npm run params:fee-adjustment -- --network=testnet",
+          "4. Verify changes: npm run verify:testnet",
+          "5. Apply on mainnet: npm run params:fee-adjustment -- --network=mainnet"
+        ]
+      },
+      {
+        "name": "Emergency Response Workflow",
+        "steps": [
+          "1. Assess situation and determine response",
+          "2. Execute emergency operation: npm run emergency:pause-all -- --network=mainnet",
+          "3. Investigate and fix issues",
+          "4. Test fixes on testnet",
+          "5. Resume operations: npm run emergency:resume-all -- --network=mainnet"
+        ]
+      },
+      {
+        "name": "Migration Workflow",
+        "steps": [
+          "1. Plan migration: npm run migrate:list",
+          "2. Test on localnet: npm run migrate:v1-to-v2 -- --network=localnet --dry-run",
+          "3. Test on testnet: npm run migrate:v1-to-v2 -- --network=testnet --dry-run",
+          "4. Execute on testnet: npm run migrate:v1-to-v2 -- --network=testnet",
+          "5. Verify migration: npm run verify:testnet",
+          "6. Execute on mainnet: npm run migrate:v1-to-v2 -- --network=mainnet"
+        ]
+      }
+    ]
+  }
+}
