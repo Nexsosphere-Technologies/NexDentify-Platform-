@@ -21,7 +21,43 @@ This directory contains the smart contracts for the NexDentify platform, built u
   - Emergency controls and admin functions
   - Proportional reward calculation
 
+### 3. LP Farming Pool Contract (`LPFarmingPool.ts`)
+- **Purpose**: Liquidity Provider token farming for earning NEXDEN rewards
+- **Features**:
+  - LP token staking mechanism
+  - Time-based reward distribution with configurable rates
+  - Multiple farming periods support
+  - Emergency withdrawal functionality
+  - Real-time APR calculations
+
 ## Key Features
+
+### LP Farming Pool Functionality
+
+#### Core Operations
+- **Stake LP Tokens**: Deposit LP tokens to earn NEXDEN rewards
+- **Unstake LP Tokens**: Withdraw staked LP tokens
+- **Claim Rewards**: Collect accumulated NEXDEN rewards
+- **Emergency Withdraw**: Immediate withdrawal (forfeit rewards)
+
+#### Reward System
+- **Rate-based**: Configurable rewards per second per staked LP token
+- **Time-proportional**: Rewards calculated based on staking duration
+- **Real-time calculation**: Continuous reward accumulation
+- **Precision handling**: High-precision arithmetic for fair distribution
+
+#### Security Features
+- **Farming periods**: Defined start and end times for campaigns
+- **Emergency controls**: Admin can pause/resume operations
+- **Access controls**: Admin-only functions for pool management
+- **Emergency withdrawal**: Users can exit immediately if needed
+
+#### Pool Parameters
+- **LP Token Asset ID**: The LP token to be staked
+- **Reward Token Asset ID**: NEXDEN token for rewards
+- **Reward Rate**: Rewards per second per staked LP token
+- **Start/End Time**: Farming campaign duration
+- **Total Staked**: Current amount of LP tokens staked
 
 ### Staking Pool Functionality
 
@@ -55,7 +91,35 @@ This directory contains the smart contracts for the NexDentify platform, built u
 npm install @algorandfoundation/tealscript algosdk
 ```
 
-### Basic Example
+### LP Farming Pool Example
+
+```typescript
+import { LPFarmingPoolClient } from './contracts/LPFarmingPoolClient';
+import { NexDenASA } from './contracts/NexDen';
+
+// Initialize clients
+const farmingPool = new LPFarmingPoolClient(algodClient);
+const nexDenToken = new NexDenASA(algodClient, creatorAccount);
+
+// Deploy contracts
+const rewardTokenId = await nexDenToken.createASA();
+const lpTokenId = await createLPToken(); // Your LP token creation logic
+
+const { appId } = await farmingPool.deploy(admin, {
+  lpTokenAssetId: lpTokenId,
+  rewardTokenAssetId: rewardTokenId,
+  rewardRate: 100, // 100 NEXDEN per second per LP token
+  startTime: Math.floor(Date.now() / 1000),
+  endTime: Math.floor(Date.now() / 1000) + (90 * 24 * 3600), // 90 days
+});
+
+// User operations
+await farmingPool.optIn(userAccount);
+await farmingPool.stakeLPTokens(userAccount, 5000000, lpTokenId); // Stake 5 LP tokens
+await farmingPool.claimRewards(userAccount);
+```
+
+### Basic Staking Pool Example
 
 ```typescript
 import { StakingPoolClient } from './contracts/StakingPoolClient';
@@ -82,17 +146,18 @@ await stakingPool.claimRewards(userAccount);
 
 ### Advanced Usage
 
-See `StakingPoolExample.ts` for comprehensive examples including:
+See `LPFarmingPoolExample.ts` and `StakingPoolExample.ts` for comprehensive examples including:
 - Multi-user scenarios
 - Reward calculations
 - Emergency handling
 - Admin operations
+- Pool analytics
 
 ## Contract Architecture
 
 ### State Management
 - **Global State**: Pool-wide parameters and statistics
-- **Local State**: Individual user staking information
+- **Local State**: Individual user farming/staking information
 
 ### Transaction Types
 - **Application Calls**: Contract method invocations
@@ -104,6 +169,7 @@ See `StakingPoolExample.ts` for comprehensive examples including:
 - **Access Control**: Admin-only functions properly protected
 - **Input Validation**: All parameters validated before processing
 - **Emergency Controls**: Pause functionality for critical situations
+- **Precision Arithmetic**: High-precision calculations for fair reward distribution
 
 ## Testing
 
@@ -125,14 +191,33 @@ npm run deploy -- --network mainnet
 
 ## Configuration
 
-### Pool Parameters
+### LP Farming Pool Parameters
+- **Reward Rate**: Rewards per second per staked LP token
+- **Farming Period**: Start and end timestamps
+- **LP Token**: Asset ID of the LP token to be staked
+- **Reward Token**: NEXDEN token asset ID
+
+### Staking Pool Parameters
 - **Reward Rate**: Set in basis points (1000 = 10%)
 - **Minimum Stake**: Minimum tokens required to stake
 - **Unbonding Period**: Time delay for unstaking (seconds)
 
-### Example Configuration
+### Example Configurations
+
+#### LP Farming Pool
 ```typescript
-const config = {
+const farmingConfig = {
+  lpTokenAssetId: 123456789,
+  rewardTokenAssetId: 987654321,
+  rewardRate: 100, // 100 NEXDEN per second per LP token
+  startTime: Math.floor(Date.now() / 1000),
+  endTime: Math.floor(Date.now() / 1000) + (90 * 24 * 3600), // 90 days
+};
+```
+
+#### Staking Pool
+```typescript
+const stakingConfig = {
   nexdenAssetId: 123456789,
   rewardRate: 1500, // 15% APY
   minStakeAmount: 1000000, // 1 NEXDEN (6 decimals)
@@ -141,6 +226,29 @@ const config = {
 ```
 
 ## API Reference
+
+### LPFarmingPool Contract Methods
+
+#### User Methods
+- `optIn()`: Register for farming pool
+- `stakeLPTokens(amount)`: Deposit LP tokens for farming
+- `unstakeLPTokens(amount)`: Withdraw LP tokens
+- `claimRewards()`: Collect accumulated NEXDEN rewards
+- `emergencyWithdraw()`: Immediate withdrawal (forfeit rewards)
+
+#### Admin Methods
+- `updatePoolParameters()`: Modify pool settings
+- `emergencyPausePool()`: Halt all operations
+- `resumePool()`: Resume normal operations
+- `fundPool()`: Add reward tokens to pool
+- `extendFarmingPeriod()`: Extend farming campaign
+- `transferOwnership()`: Change pool admin
+
+#### View Methods
+- `getUserInfo()`: Get user farming details
+- `getPoolInfo()`: Get pool statistics
+- `calculateAPR()`: Get current APR
+- `earned()`: Calculate user's earned rewards
 
 ### StakingPool Contract Methods
 
